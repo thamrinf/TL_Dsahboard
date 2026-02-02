@@ -713,25 +713,29 @@ with tabs[7]:
         .rename(columns={"Municipality": "mun_clean"})
     )
 
-    # Merge activity data into GeoDataFrame
+    # 2. Merge and IMMEDIATE "Hard-Reset" of types
     map_df = gdf_raw.merge(geo_summary, on="mun_clean", how="left").fillna(0)
 
-    # --- CRITICAL FIX FOR STREAMLIT CLOUD ERROR ---
-    # Convert NumPy types (int64/float64) to standard Python types
-    map_df["Activities"] = map_df["Activities"].astype(int)
-    map_df["Total_Budget"] = map_df["Total_Budget"].astype(float)
-    
-    # Ensure any other numeric columns are standard floats
-    for col in map_df.select_dtypes(include=['number']).columns:
-        map_df[col] = map_df[col].astype(float)
-    # ----------------------------------------------
+    # 3. Create a clean JSON-safe version of the data
+    # We manually select only the columns we need to prevent hidden data types from crashing the app
+    features = []
+    for _, row in map_df.iterrows():
+        feature = {
+            "type": "Feature",
+            "geometry": row["geometry"].__geo_interface__,
+            "properties": {
+                "adm1_name": str(row["adm1_name"]),
+                "Activities": int(row["Activities"]),
+                "Total_Budget": float(row["Total_Budget"]),
+                # Add the pre-formatted string here so JSON doesn't have to calculate it
+                "display_val": f"${row['Total_Budget']:,.0f}" if map_metric == "Total_Budget" else str(int(row['Activities']))
+            }
+        }
+        features.append(feature)
 
-    if map_metric == "Total_Budget":
-        map_df["display_val"] = map_df[map_metric].apply(lambda x: f"${x:,.0f}")
-    else:
-        map_df["display_val"] = map_df[map_metric].astype(int).astype(str)
+    geo_json_safe = {"type": "FeatureCollection", "features": features}
 
-    # --- 3. DYNAMIC COLORING & LEGEND LOGIC ---
+    # --- 3A. DYNAMIC COLORING & LEGEND LOGIC ---
     zero_color = "#dddddd"
     active_colors = ["#c6dbef", "#6baed6", "#4292c6", "#2171b5", "#08306b"]
     pos_values = map_df[map_df[map_metric] > 0][map_metric]
@@ -777,7 +781,7 @@ with tabs[7]:
     map_df["geometry"] = map_df["geometry"].buffer(0)
 
     folium.GeoJson(
-        map_df.to_json(),
+        geo_json_safe,  # Use our manually cleaned dictionary instead of map_df.to_json()
         style_function=lambda f: {
             "fillColor": get_color(f["properties"][map_metric]),
             "color": "white", "weight": 1, "fillOpacity": 0.8,
@@ -791,7 +795,7 @@ with tabs[7]:
     ).add_to(m)
 
     # --- 5. RENDER FULL-WIDTH MAP ---
-    map_output = st_folium(m, width=2000, height=600, key=f"full_map_{map_metric}")
+    map_output = st_folium(m, width=None, height=600, key=f"full_map_{map_metric}")
 
     # --- 6. DETAIL VIEW ---
     if map_output and map_output.get("last_active_drawing"):
