@@ -752,7 +752,7 @@ with tabs[7]:
         return active_colors[-1]
 
     # --- 4. GENERATE MAP & ADD HTML LEGEND ---
-    m = folium.Map(location=[-8.9, 126.5], zoom_start=8.5, tiles="cartodbpositron")
+    m = folium.Map(location=[-8.85, 125.6], zoom_start=8.5, tiles="cartodbpositron")
 
     # Define the Legend HTML
     legend_html = f'''
