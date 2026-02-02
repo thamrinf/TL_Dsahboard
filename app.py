@@ -758,6 +758,13 @@ with tabs[7]:
     
     m.get_root().html.add_child(folium.Element(legend_html))
 
+    # Fix geometries before converting to GeoJSON
+    map_df = map_df[map_df.geometry.notnull()]
+    map_df = map_df.set_geometry("geometry")
+    map_df = map_df.to_crs(epsg=4326)
+
+    map_df["geometry"] = map_df["geometry"].buffer(0)
+
     folium.GeoJson(
         map_df.to_json(),
         style_function=lambda f: {
