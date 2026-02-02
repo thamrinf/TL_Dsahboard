@@ -2,4 +2,7 @@ streamlit
 pandas
 numpy
 altair
-
+geopandas
+folium
+streamlit-folium
+plotly
