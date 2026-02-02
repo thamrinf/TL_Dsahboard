@@ -702,7 +702,7 @@ with tabs[7]:
     )
     st.caption("ℹ️ Map visualization excludes national-level records to focus on regional distribution. Click a municipality for details.")
 
-    # --- 2. DATA PREPARATION ---
+    # 2. Data Preparation for Mapping
     geo_summary = (
         filtered_df.groupby(filtered_df["Municipality"].str.strip().str.upper())
         .agg(
@@ -713,7 +713,18 @@ with tabs[7]:
         .rename(columns={"Municipality": "mun_clean"})
     )
 
+    # Merge activity data into GeoDataFrame
     map_df = gdf_raw.merge(geo_summary, on="mun_clean", how="left").fillna(0)
+
+    # --- CRITICAL FIX FOR STREAMLIT CLOUD ERROR ---
+    # Convert NumPy types (int64/float64) to standard Python types
+    map_df["Activities"] = map_df["Activities"].astype(int)
+    map_df["Total_Budget"] = map_df["Total_Budget"].astype(float)
+    
+    # Ensure any other numeric columns are standard floats
+    for col in map_df.select_dtypes(include=['number']).columns:
+        map_df[col] = map_df[col].astype(float)
+    # ----------------------------------------------
 
     if map_metric == "Total_Budget":
         map_df["display_val"] = map_df[map_metric].apply(lambda x: f"${x:,.0f}")
