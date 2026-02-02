@@ -133,8 +133,10 @@ with tabs[0]:
         )
 
         st.warning(
-            "**Disclaimer:** Findings are based on administrative data and should not substitute "
-            "formal monitoring, evaluation, or audit processes."
+            "**Disclaimer:** The findings are based on administrative data and are intended solely for analytical and coordination purposes. "
+            "They should not be considered a substitute for formal monitoring, evaluation, or audit processes."
+            " The dataset and associated analyses do not represent official data of the Government of Timor-Leste, the United Nations, or development partners."
+            "Data completeness and accuracy may vary across sources."
         )
 
 # ==========================================
